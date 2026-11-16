@@ -15,26 +15,44 @@
 <body>
   <div class="box">
     <div class="spinner"></div>
-    <p>Đang chuẩn bị link tải, vui lòng đợi...</p>
+    <p>Đang chuẩn bị liên kết, vui lòng đợi...</p>
     <a id="fallback" href="#">Bấm vào đây nếu không tự chuyển trang</a>
   </div>
   <script>
     (function () {
-      var RAILWAY_PING = "https://worker-production-2a30b999.up.railway.app/go";
+      var RAILWAY_BASE = "https://worker-production-2a30b999.up.railway.app";
+      var GTRAFFIC_FIXED = "https://gtraffic.io/F7KF19Q";
       var DEFAULT_TARGET = "https://www.mediafire.com/file/n82m7dnuo9t9cmz/VALI+MODS+V96.apks.zip/file";
 
       var params = new URLSearchParams(window.location.search);
-      var to = params.get("to") || DEFAULT_TARGET;
-      if (!/^https?:\/\//i.test(to)) to = DEFAULT_TARGET;
+      var isStart = params.get("s") === "1";
 
-      document.getElementById("fallback").href = to;
+      var pingUrl, nextUrl;
+      if (isStart) {
+        // Bước 1: Cổng vào -> gửi IP + người tạo link về Railway /entry -> chuyển sang link gtraffic cố định
+        var q = new URLSearchParams({
+          u: params.get("u") || "",
+          n: params.get("n") || "",
+          sig: params.get("sig") || ""
+        });
+        pingUrl = RAILWAY_BASE + "/entry?" + q.toString();
+        nextUrl = GTRAFFIC_FIXED;
+      } else {
+        // Bước 2: Link gốc sau khi vượt gtraffic xong -> gửi IP về Railway /go -> chuyển sang MediaFire
+        var to = params.get("to") || DEFAULT_TARGET;
+        if (!/^https?:\/\//i.test(to)) to = DEFAULT_TARGET;
+        pingUrl = RAILWAY_BASE + "/go";
+        nextUrl = to;
+      }
+
+      document.getElementById("fallback").href = nextUrl;
 
       try {
-        fetch(RAILWAY_PING, { mode: "no-cors", keepalive: true }).catch(function () {});
+        fetch(pingUrl, { mode: "no-cors", keepalive: true }).catch(function () {});
       } catch (e) {}
 
       setTimeout(function () {
-        window.location.replace(to);
+        window.location.replace(nextUrl);
       }, 250);
     })();
   </script>
