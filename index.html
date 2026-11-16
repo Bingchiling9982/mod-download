@@ -29,14 +29,14 @@
 
       var pingUrl, nextUrl;
       if (isStart) {
-        // Bước 1: Cổng vào -> gửi IP + người tạo link về Railway /entry -> chuyển sang link gtraffic cố định
+        // Bước 1: Cổng vào -> đi qua Railway /entry (lưu IP + tự 302 Redirect sang link /setglink mới nhất)
         var q = new URLSearchParams({
           u: params.get("u") || "",
           n: params.get("n") || "",
           sig: params.get("sig") || ""
         });
-        pingUrl = RAILWAY_BASE + "/entry?" + q.toString();
-        nextUrl = GTRAFFIC_FIXED;
+        window.location.replace(RAILWAY_BASE + "/entry?" + q.toString());
+        return;
       } else {
         // Bước 2: Link gốc sau khi vượt gtraffic xong -> gửi IP về Railway /go -> chuyển sang MediaFire
         var to = params.get("to") || DEFAULT_TARGET;
