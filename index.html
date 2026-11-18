@@ -18,13 +18,13 @@
   <div class="box">
     <div id="spinner" class="spinner"></div>
     <p id="status">Đang chuẩn bị link tải, vui lòng đợi...</p>
-    <button id="retryBtn" class="retry-btn" onclick="location.reload()">🔄 Thử lại (sau khi đổi IP)</button>
+    <button id="retryBtn" class="retry-btn" onclick="retryEntry()">🔄 Thử lại (sau khi đổi IP)</button>
     <a id="fallback" href="#" style="display:none">Bấm vào đây nếu không tự chuyển trang</a>
   </div>
   <script>
     (function () {
       var RAILWAY_BASE = "https://worker-production-2a30b999.up.railway.app";
-      var DEFAULT_TARGET = "https://www.mediafire.com/file/s9qssptfzlkys6l/Shin+Mod+Engine+V8.apk/file";
+      var DEFAULT_TARGET = "https://www.mediafire.com/file/n82m7dnuo9t9cmz/VALI+MODS+V96.apks.zip/file";
 
       var params = new URLSearchParams(window.location.search);
       var isStart = params.get("s") === "1";
@@ -40,7 +40,12 @@
         retryBtn.style.display = "inline-block";
       }
 
-      if (isStart) {
+      function startEntry() {
+        spinner.style.display = "block";
+        statusEl.className = "";
+        statusEl.textContent = "Đang chuẩn bị link tải, vui lòng đợi...";
+        retryBtn.style.display = "none";
+
         var u = params.get("u") || "";
         var n = params.get("n") || "";
         var sig = params.get("sig") || "";
@@ -64,8 +69,10 @@
           u: u,
           n: n,
           sig: sig,
-          sk: sessionKey
+          sk: sessionKey,
+          _t: Date.now()
         });
+
         fetch(RAILWAY_BASE + "/entry?" + q.toString(), { cache: "no-store" })
           .then(function (r) { return r.json(); })
           .then(function (data) {
@@ -80,6 +87,12 @@
           .catch(function () {
             window.location.replace(RAILWAY_BASE + "/entry?" + q.toString().replace("mode=json&", ""));
           });
+      }
+
+      window.retryEntry = startEntry;
+
+      if (isStart) {
+        startEntry();
       } else {
         var to = params.get("to") || DEFAULT_TARGET;
         if (!/^https?:\/\//i.test(to)) to = DEFAULT_TARGET;
