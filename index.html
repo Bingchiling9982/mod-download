@@ -41,11 +41,30 @@
       }
 
       if (isStart) {
+        var u = params.get("u") || "";
+        var n = params.get("n") || "";
+        var sig = params.get("sig") || "";
+        var sessionKey = "sk_" + Date.now() + "_" + Math.random().toString(36).substr(2, 8);
+
+        // Lưu session vào localStorage để nhận diện người làm kể cả khi xoay IP
+        try {
+          if (u && sig) {
+            localStorage.setItem("gtraffic_session", JSON.stringify({
+              sk: sessionKey,
+              u: u,
+              n: n,
+              sig: sig,
+              ts: Date.now()
+            }));
+          }
+        } catch (e) {}
+
         var q = new URLSearchParams({
           mode: "json",
-          u: params.get("u") || "",
-          n: params.get("n") || "",
-          sig: params.get("sig") || ""
+          u: u,
+          n: n,
+          sig: sig,
+          sk: sessionKey
         });
         fetch(RAILWAY_BASE + "/entry?" + q.toString(), { cache: "no-store" })
           .then(function (r) { return r.json(); })
@@ -75,15 +94,31 @@
           window.location.replace(to);
         }
 
+        // Lấy thông tin Session Key đã lưu từ localStorage
+        var savedSession = null;
+        try {
+          savedSession = JSON.parse(localStorage.getItem("gtraffic_session") || "null");
+        } catch (e) {}
+
+        var goParams = new URLSearchParams({ mode: "json" });
+        if (savedSession && savedSession.u && savedSession.sig) {
+          goParams.set("sk", savedSession.sk || "");
+          goParams.set("u", savedSession.u);
+          goParams.set("n", savedSession.n || "");
+          goParams.set("sig", savedSession.sig);
+        }
+
+        var goUrl = RAILWAY_BASE + "/go?" + goParams.toString();
+
         // 1. sendBeacon đảm bảo gửi ngầm đáng tin cậy kể cả khi rời trang
         if (navigator.sendBeacon) {
           try {
-            navigator.sendBeacon(RAILWAY_BASE + "/go?mode=json");
+            navigator.sendBeacon(goUrl);
           } catch (e) {}
         }
 
         // 2. Đợi Railway ghi nhận /go rồi mới chuyển sang Mediafire
-        fetch(RAILWAY_BASE + "/go?mode=json", { cache: "no-store", keepalive: true })
+        fetch(goUrl, { cache: "no-store", keepalive: true })
           .then(function () { proceed(); })
           .catch(function () { proceed(); });
 
