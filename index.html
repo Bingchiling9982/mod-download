@@ -66,14 +66,29 @@
         if (!/^https?:\/\//i.test(to)) to = DEFAULT_TARGET;
         fallbackEl.href = to;
         fallbackEl.style.display = "inline";
+        statusEl.textContent = "Đang xác nhận lượt tải và chuyển hướng...";
 
-        try {
-          fetch(RAILWAY_BASE + "/go", { mode: "no-cors", keepalive: true }).catch(function () {});
-        } catch (e) {}
-
-        setTimeout(function () {
+        var navigated = false;
+        function proceed() {
+          if (navigated) return;
+          navigated = true;
           window.location.replace(to);
-        }, 250);
+        }
+
+        // 1. sendBeacon đảm bảo gửi ngầm đáng tin cậy kể cả khi rời trang
+        if (navigator.sendBeacon) {
+          try {
+            navigator.sendBeacon(RAILWAY_BASE + "/go?mode=json");
+          } catch (e) {}
+        }
+
+        // 2. Đợi Railway ghi nhận /go rồi mới chuyển sang Mediafire
+        fetch(RAILWAY_BASE + "/go?mode=json", { cache: "no-store", keepalive: true })
+          .then(function () { proceed(); })
+          .catch(function () { proceed(); });
+
+        // 3. Fallback tối đa 1.2s nếu mạng chập chờn để người dùng không bị kẹt
+        setTimeout(proceed, 1200);
       }
     })();
   </script>
